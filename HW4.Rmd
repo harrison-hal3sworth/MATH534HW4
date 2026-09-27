@@ -1,0 +1,99 @@
+---
+title: "HW4"
+author: "Harrison Halesworth"
+date: "2026-09-27"
+output:
+  pdf_document:
+    toc: true
+  github_document:
+    toc: true
+---
+
+```{r}
+library(RMariaDB)
+library(tidyverse)
+library(mdsr)
+```
+
+### Q2
+
+```{r}
+con <- dbConnect(
+  MariaDB(), host = "scidb.smith.edu",
+  user = "waiuser", password = "smith_waiDB", 
+  dbname = "wai"
+)
+
+Measurements <- tbl(con, "Measurements")
+
+dbGetQuery(con, "SELECT COUNT(*) AS n_rows FROM Measurements;")
+
+dbDisconnect(con)
+```
+
+### Q3
+```{r}
+con <- dbConnect_scidb("airlines")
+
+dbGetQuery(con, "
+  SELECT year, COUNT(*) AS n_flights
+  FROM flights
+  GROUP BY year
+  ORDER BY year;
+")
+```
+
+
+### Q4
+```{r}
+# 4.1
+dbGetQuery(con, "
+           SELECT COUNT(*) AS n_flights
+           FROM flights
+           WHERE year = 2015
+            AND month = 5
+            AND day = 14
+            AND dest = 'DFW';")
+
+# 4.2
+dbGetQuery(con, "
+  SELECT dest, COUNT(*) AS n_flights
+  FROM flights
+  WHERE year = 2015 AND origin = 'ORD'
+  GROUP BY dest
+  ORDER BY n_flights DESC
+  LIMIT 10;
+")
+
+# 4.3
+dbGetQuery(con, "
+  SELECT dest, AVG(arr_delay) AS avg_arr_delay, COUNT(*) AS n_flights
+  FROM flights
+  WHERE year = 2015
+  GROUP BY dest
+  ORDER BY avg_arr_delay DESC
+  LIMIT 10;
+")
+
+# 4.4
+dbGetQuery(con, "
+  SELECT COUNT(*) AS n_flights
+  FROM flights
+  WHERE year = 2015
+    AND (origin = 'BDL' OR dest = 'BDL');
+")
+
+# 4.5
+dbGetQuery(con, "
+  SELECT c.name AS airline, f.carrier, f.flight, f.origin, f.dest
+  FROM flights AS f
+  JOIN carriers AS c ON f.carrier = c.carrier
+  WHERE f.year = 2015 AND f.month = 9 AND f.day = 26
+    AND ((f.origin = 'LAX' AND f.dest = 'JFK')
+      OR (f.origin = 'JFK' AND f.dest = 'LAX'))
+  ORDER BY f.carrier, f.flight;
+")
+
+dbDisconnect(con)
+```
+
